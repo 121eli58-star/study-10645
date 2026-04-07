@@ -11,4 +11,4 @@ STATIC_DIR = BASE_DIR / "static"
 USER_DATA_DIR = BASE_DIR / "user_data"
 
 HOST = "0.0.0.0"
-PORT = int(os.environ.get("PORT", 8000))
+PORT = int(os.environ.get("PORT", 8080))

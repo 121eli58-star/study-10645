@@ -1,6 +1,8 @@
 """API routes for diagram validation."""
 from fastapi import APIRouter
+from pydantic import BaseModel
 from models.diagram import DiagramSubmission, DiagramType, ValidationResult, ValidationError, Severity
+from services.ai_validator import evaluate_diagram_with_ai
 
 router = APIRouter(tags=["diagrams"])
 
@@ -28,6 +30,11 @@ async def validate_diagram(submission: DiagramSubmission) -> ValidationResult:
         errors.extend(_validate_dfd_basic(submission))
     elif submission.diagram_type == DiagramType.MENU_TREE:
         errors.extend(_validate_menu_tree_basic(submission))
+
+    # Optional AI Validation
+    if submission.exercise_prompt:
+        ai_errors = await evaluate_diagram_with_ai(submission)
+        errors.extend(ai_errors)
 
     return ValidationResult(
         valid=len([e for e in errors if e.severity == Severity.ERROR]) == 0,

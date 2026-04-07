@@ -80,3 +80,22 @@ if __name__ == "__main__":
     print("=" * 50 + "\n")
 
     uvicorn.run(app, host=HOST, port=PORT)
+
+# --- Firebase Functions Export ---
+import os
+# Check if running in Firebase Cloud environment based on env variables
+# Only initialize firebase if we are not running locally, or if we want to run firebase emulators
+try:
+    from firebase_functions import https_fn
+    from firebase_admin import initialize_app, _apps
+
+    # Initialize Firebase Admin app if it doesn't exist
+    if not _apps:
+        initialize_app()
+
+    # Expose the FastAPI app as a Firebase HTTP function
+    @https_fn.on_request()
+    def api(req: https_fn.Request) -> https_fn.Response:
+        return https_fn.asgi_app(app)(req)
+except ImportError:
+    pass # firebase libraries purely optional for local dev running python main.py

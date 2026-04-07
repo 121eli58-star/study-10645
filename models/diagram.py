@@ -32,6 +32,7 @@ class DiagramEdge(BaseModel):
 class DiagramSubmission(BaseModel):
     diagram_type: DiagramType
     exercise_id: Optional[str] = None
+    exercise_prompt: Optional[str] = None
     metadata: dict[str, Any] = {}
     nodes: list[DiagramNode]
     edges: list[DiagramEdge]

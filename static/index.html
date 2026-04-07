@@ -1,48 +1,155 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>מערכת לימודים • קורס 10645</title>
-  <link rel="stylesheet" href="/static/css/style.css">
+  <meta name="description" content="מערכת למידה אינטראקטיבית לקורס 10645 — תכנון ועיצוב מערכות מידע">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Quicksand:wght@400;500;600;700&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <!-- Navigation -->
-  <nav id="main-nav">
-    <div class="nav-inner">
-      <h1 class="nav-logo" onclick="App.navigate('dashboard')">📚 מערכת לימודים • 10645</h1>
-      <div class="nav-links">
-        <button class="nav-btn active" data-route="dashboard" onclick="App.navigate('dashboard')">🏠 ראשי</button>
-        <button class="nav-btn" data-route="learn" onclick="App.navigate('learn')">📖 למידה</button>
-        <button class="nav-btn" data-route="cards" onclick="App.navigate('cards')">🃏 כרטיסיות</button>
-        <button class="nav-btn" data-route="quiz" onclick="App.navigate('quiz')">✅ בוחן</button>
-        <button class="nav-btn" data-route="exam" onclick="App.navigate('exam')">📝 מבחן</button>
-        <button class="nav-btn" data-route="sandbox" onclick="App.navigate('sandbox')">✏️ סנדבוקס</button>
-        <button class="nav-btn" data-route="calculator" onclick="App.navigate('calculator')">🧮 מחשבון</button>
+
+  <!-- Background Glows -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- Hamburger Toggle (mobile) -->
+  <button class="hamburger-btn" id="hamburger-btn" onclick="App.toggleSidebar()">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="App.closeSidebar()"></div>
+
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <h1>מערכת לימודים</h1>
+      <p>קורס 10645 • מערכות מידע</p>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="sidebar-link active" data-route="dashboard" onclick="App.navigate('dashboard')">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+        לוח בקרה
+      </button>
+      <button class="sidebar-link" data-route="learn" onclick="App.navigate('learn')">
+        <span class="material-symbols-outlined">auto_stories</span>
+        למידה
+      </button>
+      <button class="sidebar-link" data-route="cards" onclick="App.navigate('cards')">
+        <span class="material-symbols-outlined">style</span>
+        כרטיסיות
+      </button>
+      <button class="sidebar-link" data-route="quiz" onclick="App.navigate('quiz')">
+        <span class="material-symbols-outlined">quiz</span>
+        בוחן
+      </button>
+      <button class="sidebar-link" data-route="exam" onclick="App.navigate('exam')">
+        <span class="material-symbols-outlined">assignment</span>
+        מבחן
+      </button>
+      <button class="sidebar-link" data-route="sandbox" onclick="App.navigate('sandbox')">
+        <span class="material-symbols-outlined">draw</span>
+        סטודיו ציור
+      </button>
+      <button class="sidebar-link" data-route="calculator" onclick="App.navigate('calculator')">
+        <span class="material-symbols-outlined">calculate</span>
+        מחשבון
+      </button>
+    </nav>
+
+    <div class="sidebar-cta">
+      <button onclick="App.toggleChatbot()">
+        <span class="material-symbols-outlined">auto_awesome</span>
+        מועד אלפא - עוזר AI
+      </button>
+    </div>
+  </aside>
+
+  <!-- Top Header -->
+  <header class="top-header" id="top-header">
+    <div class="header-search">
+      <span class="material-symbols-outlined" style="color: var(--soft-purple);">search</span>
+      <input type="text" placeholder="חיפוש יחידות, נושאים או כלים...">
+    </div>
+
+    <div class="header-actions">
+      <div class="header-notification">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="notif-dot"></span>
+      </div>
+      <div class="header-profile">
+        <div class="header-profile-info">
+          <div class="name">סטודנט • קורס 10645</div>
+          <div class="sub">מערכות מידע</div>
+        </div>
+        <div class="header-avatar">🎓</div>
       </div>
     </div>
-  </nav>
+  </header>
 
   <!-- Main Content Area -->
   <main id="app-content">
     <div id="loading" class="loading-screen">
       <div class="spinner"></div>
-      <p>טוען את המערכת...</p>
+      <p style="color: var(--text-secondary);">טוען את המערכת...</p>
     </div>
   </main>
+
+  <!-- Chatbot - מועד אלפא -->
+  <div class="chatbot-trigger" id="chatbot-trigger" onclick="App.toggleChatbot()">
+    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+  </div>
+
+  <div class="chatbot-panel" id="chatbot-panel">
+    <div class="chatbot-header">
+      <div class="chatbot-header-title">
+        <span style="font-size:24px;">🤖</span>
+        <div>
+          <h3>מועד אלפא</h3>
+          <span class="bot-status">● מוכן לעזור</span>
+        </div>
+      </div>
+      <span class="chatbot-close material-symbols-outlined" onclick="App.toggleChatbot()">close</span>
+    </div>
+    <div class="chatbot-messages" id="chatbot-messages">
+      <div class="chat-msg bot">
+        <div class="bot-name">מועד אלפא</div>
+        היי! 👋 אני מועד אלפא, העוזר האישי שלך לקורס מערכות מידע. אפשר לשאול אותי על כל נושא בקורס — נרמול, DFD, ERD, מחזור חיים ועוד. מה תרצה ללמוד?
+      </div>
+    </div>
+    <div class="chatbot-input">
+      <input type="text" id="chatbot-input-field" placeholder="שאל את מועד אלפא..." onkeydown="if(event.key==='Enter')Chatbot.send()">
+      <button onclick="Chatbot.send()">
+        <span class="material-symbols-outlined">send</span>
+      </button>
+    </div>
+  </div>
 
   <!-- Toast Notifications -->
   <div id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="/static/js/utils/hebrew-labels.js"></script>
-  <script src="/static/js/api.js"></script>
-  <script src="/static/js/components/dashboard.js"></script>
-  <script src="/static/js/components/unit-viewer.js"></script>
-  <script src="/static/js/components/flashcard-viewer.js"></script>
-  <script src="/static/js/components/quiz-viewer.js"></script>
-  <script src="/static/js/components/exam-viewer.js"></script>
-  <script src="/static/js/components/calculator.js"></script>
-  <script src="/static/js/app.js"></script>
+  <script src="/js/utils/hebrew-labels.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/components/dashboard.js"></script>
+  <script src="/js/components/unit-viewer.js"></script>
+  <script src="/js/components/flashcard-viewer.js"></script>
+  <script src="/js/components/quiz-viewer.js"></script>
+  <script src="/js/components/exam-viewer.js"></script>
+  <script src="/js/components/calculator.js"></script>
+  <script src="/js/components/diagram-editor.js"></script>
+  <script src="/js/components/chatbot.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 </html>
