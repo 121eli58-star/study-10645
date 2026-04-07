@@ -780,44 +780,39 @@ window.DiagramEditor = {
   // ─── Validation API ───────────────────────────────────────────
   async validateDiagram() {
     this.clearErrors();
-
-    const nodesPayload = this.nodes.map(n => ({ id: n.id, type: n.type, label: n.label, x: n.x, y: n.y, properties: n.properties }));
-    const edgesPayload = this.edges.map(e => ({ id: e.id, source: e.source, target: e.target, label: e.label || '' }));
-
+    const exInput = document.getElementById('val-exercise-prompt');
+    const exerciseStr = exInput ? exInput.value.trim() : '';
+    const payload = {
+      diagram_type: this.diagramType,
+      exercise_prompt: exerciseStr || undefined,
+      nodes: this.nodes.map(n => ({ id: n.id, type: n.type, label: n.label, x: n.x, y: n.y, properties: n.properties })),
+      edges: this.edges.map(e => ({ id: e.id, source: e.source, target: e.target, label: e.label || '' }))
+    };
     const panel   = document.getElementById('validation-panel');
     const content = document.getElementById('validation-content');
     panel.style.display = 'block';
     content.innerHTML   = '<div class="de-spinner"></div>';
-
     try {
-      const result = await API.validateDiagram(this.diagramType, nodesPayload, edgesPayload);
-
+      const res    = await fetch('/api/diagrams/validate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
       if (result.valid) {
-        let html = '<div class="de-v-ok">🎉 התרשים תקין לחלוטין!</div>';
-        if (result.warnings && result.warnings.length > 0) {
-          result.warnings.forEach(w => {
-            html += `<div class="de-v-warn">⚠️ ${w.message_he || w}</div>`;
-          });
-        }
-        content.innerHTML = html;
+        content.innerHTML = '<div class="de-v-ok">🎉 התרשים תקין לחלוטין!</div>';
       } else {
         let html = '';
-        (result.errors || []).forEach(err => {
-          html += `<div class="de-v-err">❌ ${err.message_he || err}</div>`;
+        result.errors.forEach(err => {
+          html += `<div class="de-v-err">${err.message_he}</div>`;
           (err.affected_node_ids || []).forEach(nid => {
             const el = document.getElementById(nid);
             if (el) el.classList.add('de-node-error');
           });
         });
-        if (result.warnings && result.warnings.length > 0) {
-          result.warnings.forEach(w => {
-            html += `<div class="de-v-warn">⚠️ ${w.message_he || w}</div>`;
-          });
-        }
         content.innerHTML = html;
       }
     } catch (err) {
-      content.innerHTML = `<div class="de-v-err">שגיאה: ${err.message}</div>`;
+      content.innerHTML = '<div class="de-v-err">שגיאת חיבור לשרת. נסה שוב.</div>';
     }
   }
 };

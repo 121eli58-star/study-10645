@@ -4,7 +4,7 @@
     {
       "name": "study-app",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8000", "--directory", "static"],
+      "runtimeArgs": ["-X", "utf8", "main.py"],
       "port": 8000
     }
   ]

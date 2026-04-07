@@ -836,8 +836,6 @@ select:focus { outline: none; border-color: var(--soft-purple); }
 .de-v-ok  { color: var(--success); text-align: center; padding: 8px 0; }
 .de-v-err { color: #fca5a5; margin-bottom: 6px; padding-right: 14px; position: relative; }
 .de-v-err::before { content: "●"; position: absolute; right: 0; color: var(--error); font-size: 8px; top: 3px; }
-.de-v-warn { color: #fbbf24; margin-bottom: 6px; padding-right: 14px; position: relative; font-size: 13px; }
-.de-v-warn::before { content: "●"; position: absolute; right: 0; color: var(--warning); font-size: 8px; top: 3px; }
 
 .de-spinner {
   width: 22px; height: 22px;
