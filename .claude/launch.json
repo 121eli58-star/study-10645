@@ -5,7 +5,7 @@
       "name": "study-app",
       "runtimeExecutable": "python",
       "runtimeArgs": ["-X", "utf8", "main.py"],
-      "port": 8000
+      "port": 8080
     }
   ]
 }

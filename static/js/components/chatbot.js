@@ -1,73 +1,74 @@
 /**
- * Chatbot Component — "מועד אלפא"
- * AI-powered study assistant for Course 10645
- * Uses Gemini API for responses
+ * Chatbot — "מועד אלפא"
+ * AI study assistant with Firestore chat history (multi-course)
  */
 window.Chatbot = {
   messages: [],
   isTyping: false,
-  apiKey: null,
+  historyLoaded: false,
 
-  /** System prompt defining the chatbot personality */
-  SYSTEM_PROMPT: [
-    'אתה "מועד אלפא", עוזר למידה אישי לקורס 10645 — תכנון ועיצוב מערכות מידע.',
-    'תפקידך: לעזור לסטודנטים להבין נושאים בקורס, לתרגל, ולהכין אותם למבחן.',
-    '',
-    'נושאי הקורס:',
-    '1. מבוא למערכות מידע ומחזור החיים של פיתוח מערכות (SDLC)',
-    '2. ניתוח דרישות ואפיון מערכת',
-    '3. מודלים ישויות-קשרים (ERD) — ישויות, תכונות, קשרים, עוצמות',
-    '4. נרמול (Normalization) — 1NF, 2NF, 3NF, BCNF',
-    '5. תרשימי זרימת נתונים (DFD) — רמה 0, רמה 1, רמה 2',
-    '6. תרשימי מחלקות UML (Class Diagrams)',
-    '7. חקר ישימות — טכנית, כלכלית, תפעולית, לוח זמנים',
-    '8. ניתוח עלות-תועלת ותוחלת תועלת',
-    '9. ממשק משתמש ועיצוב אינטראקציה',
-    '10. אבטחת מערכות מידע',
-    '',
-    'כללים:',
-    '- ענה תמיד בעברית',
-    '- השתמש בדוגמאות מעשיות כשאתה מסביר',
-    '- אם שואלים שאלת בחינה, תן רמז לפני שאתה נותן תשובה מלאה',
-    '- השתמש באימוג\'ים כדי להפוך את ההסברים לידידותיים',
-    '- אם שואלים משהו לא קשור לקורס, הפנה בעדינות בחזרה לנושאי הקורס',
-    '- אורך תשובה אידיאלי: 3-6 משפטים, אלא אם מבקשים הסבר מפורט'
-  ].join('\n'),
+  // Fixed API key for all users
+  API_KEY: 'AIzaSyBtTr3Q6XTiCHWRUrNNfX-r2bM4C5IVpOc',
 
-  /** Initialize API key from localStorage or prompt */
-  _ensureApiKey() {
-    if (this.apiKey) return true;
-    this.apiKey = localStorage.getItem('dbstudy_gemini_api_key');
-    if (this.apiKey) return true;
+  _systemPrompt: '',
 
-    // Ask user for API key
-    const key = prompt('🔑 הזן מפתח API של Gemini כדי להפעיל את מועד אלפא:');
-    if (key && key.trim().length > 10) {
-      this.apiKey = key.trim();
-      localStorage.setItem('dbstudy_gemini_api_key', this.apiKey);
-      return true;
+  /** Build system prompt from active course */
+  _updateSystemPrompt() {
+    const course = API.getCurrentCourse();
+    const topics = course?.chatbot_topics || [];
+    const topicList = topics.map((t, i) => `${i + 1}. ${t}`).join('\n');
+
+    this._systemPrompt = [
+      `אתה "מועד אלפא", עוזר למידה אישי לקורס ${course?.id || ''} — ${course?.title || 'קורס אקדמי'}.`,
+      'תפקידך: לעזור לסטודנטים להבין נושאים בקורס, לתרגל, ולהכין אותם למבחן.',
+      '', 'נושאי הקורס:',
+      topicList,
+      '', 'כללים:',
+      '- ענה תמיד בעברית',
+      '- השתמש בדוגמאות מעשיות ורלוונטיות לנושאי הקורס',
+      '- אם שואלים שאלת בחינה, תן רמז לפני תשובה מלאה',
+      '- השתמש באימוג\'ים',
+      '- אורך תשובה: 3-6 משפטים'
+    ].join('\n');
+
+    // Update greeting
+    const greeting = document.getElementById('chatbot-greeting');
+    if (greeting && course) {
+      greeting.innerHTML = `<div class="bot-name">מועד אלפא</div>
+        היי! 👋 אני מועד אלפא, העוזר האישי שלך לקורס ${course.title}. אפשר לשאול אותי על כל נושא בקורס. מה תרצה ללמוד?`;
     }
-
-    this._addBotMessage('כדי להשתמש בי, צריך מפתח API של Gemini. אפשר לקבל אחד בחינם מ-<a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--warm-peach);text-decoration:underline;">Google AI Studio</a>. (ניתן לרענן את העמוד כדי לנסות שוב).');
-    return false;
   },
 
-  /** Send a user message */
+  _MODELS: ['gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash'],
+
+  /** Load chat history from Firestore */
+  async loadHistory() {
+    if (this.historyLoaded) return;
+    this.historyLoaded = true;
+    this._updateSystemPrompt();
+    try {
+      const history = await API.loadChatHistory();
+      if (history.length > 0) {
+        this.messages = history;
+        const container = document.getElementById('chatbot-messages');
+        if (!container) return;
+        container.innerHTML = '';
+        for (const msg of history) {
+          if (msg.role === 'user') this._addUserMessage(msg.parts[0].text);
+          else this._addBotMessage(msg.parts[0].text);
+        }
+      }
+    } catch (e) { console.warn('Failed to load chat history', e); }
+  },
+
   async send() {
     const input = document.getElementById('chatbot-input-field');
     const text = input?.value?.trim();
     if (!text || this.isTyping) return;
-
     input.value = '';
 
-    // Add user message
     this._addUserMessage(text);
     this.messages.push({ role: 'user', parts: [{ text }] });
-
-    // Check API key
-    if (!this._ensureApiKey()) return;
-
-    // Show typing indicator
     this._showTyping();
 
     try {
@@ -75,126 +76,77 @@ window.Chatbot = {
       this._hideTyping();
       this._addBotMessage(response);
       this.messages.push({ role: 'model', parts: [{ text: response }] });
+      API.saveChatHistory(this.messages);
     } catch (err) {
       this._hideTyping();
       console.error('Chatbot error:', err);
-
-      if (err.message?.includes('API_KEY') || err.message?.includes('401') || err.message?.includes('403')) {
-        localStorage.removeItem('dbstudy_gemini_api_key');
-        this.apiKey = null;
-        this._addBotMessage('❌ מפתח ה-API לא תקין. לחץ שוב כדי להזין מפתח חדש.');
-      } else if (err.message?.includes('429')) {
-        localStorage.removeItem('dbstudy_gemini_api_key');
-        this.apiKey = null;
-        this._addBotMessage('⚠️ המפתח שהזנת חרג ממכסת השימוש החינמית של גוגל למודל (Quota Exceeded). המפתח אופס. רענן את העמוד, והזן מפתח API חדש.');
+      if (err.message?.includes('429')) {
+        this._addBotMessage('⚠️ המערכת עמוסה כרגע. נסה שוב בעוד דקה.');
       } else {
-        this._addBotMessage('⚠️ לא הצלחתי לעבד את הבקשה. (שגיאה מהשרת).');
+        this._addBotMessage('⚠️ לא הצלחתי לעבד את הבקשה. נסה שוב.');
       }
     }
   },
 
-  /** Models to try in order (each has its own quota bucket) */
-  _MODELS: [
-    'gemini-2.5-flash',
-    'gemini-2.0-flash-lite',
-    'gemini-2.0-flash'
-  ],
-
-  /** Call Gemini API with automatic model fallback */
   async _callGemini(userMessage) {
+    if (!this._systemPrompt) this._updateSystemPrompt();
     const history = this.messages.slice(-10);
-
     const body = {
-      system_instruction: {
-        parts: [{ text: this.SYSTEM_PROMPT }]
-      },
-      contents: history.concat([
-        { role: 'user', parts: [{ text: userMessage }] }
-      ]),
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 1024,
-        topP: 0.9
-      }
+      system_instruction: { parts: [{ text: this._systemPrompt }] },
+      contents: history.concat([{ role: 'user', parts: [{ text: userMessage }] }]),
+      generationConfig: { temperature: 0.7, maxOutputTokens: 1024, topP: 0.9 }
     };
-
     const payload = JSON.stringify(body);
     let lastErr = null;
-
     for (const model of this._MODELS) {
-      const url = 'https://generativelanguage.googleapis.com/v1beta/models/'
-        + model + ':generateContent?key=' + this.apiKey;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.API_KEY}`;
       try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload
-        });
-
-        if (!res.ok) {
-          const errText = await res.text();
-          console.warn(model + ' failed (' + res.status + '), trying next...');
-          lastErr = new Error(res.status + ': ' + errText);
-          continue;
-        }
-
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
+        if (!res.ok) { lastErr = new Error(`${res.status}`); continue; }
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!text) { lastErr = new Error('Empty response from ' + model); continue; }
-
+        if (!text) { lastErr = new Error('Empty response'); continue; }
         return text;
-      } catch (e) {
-        lastErr = e;
-        continue;
-      }
+      } catch (e) { lastErr = e; continue; }
     }
-
     throw lastErr || new Error('All models failed');
   },
 
-  /** DOM helpers */
   _addUserMessage(text) {
-    const container = document.getElementById('chatbot-messages');
-    if (!container) return;
-    const div = document.createElement('div');
-    div.className = 'chat-msg user';
-    div.textContent = text;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    const c = document.getElementById('chatbot-messages');
+    if (!c) return;
+    const d = document.createElement('div');
+    d.className = 'chat-msg user';
+    d.textContent = text;
+    c.appendChild(d);
+    c.scrollTop = c.scrollHeight;
   },
 
   _addBotMessage(text) {
-    const container = document.getElementById('chatbot-messages');
-    if (!container) return;
-    const div = document.createElement('div');
-    div.className = 'chat-msg bot';
-
-    // Format basic markdown: **bold**, `code`, newlines
-    let formatted = text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`(.*?)`/g, '<code style="background:rgba(253,252,240,0.1);padding:2px 6px;border-radius:4px;font-size:12px;">$1</code>')
+    const c = document.getElementById('chatbot-messages');
+    if (!c) return;
+    const d = document.createElement('div');
+    d.className = 'chat-msg bot';
+    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`(.*?)`/g, '<code style="background:rgba(59,130,246,0.08);padding:2px 6px;border-radius:4px;font-size:12px;">$1</code>')
       .replace(/\n/g, '<br>');
-
-    div.innerHTML = `<div class="bot-name">מועד אלפא</div>${formatted}`;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    d.innerHTML = `<div class="bot-name">מועד אלפא</div>${formatted}`;
+    c.appendChild(d);
+    c.scrollTop = c.scrollHeight;
   },
 
   _showTyping() {
     this.isTyping = true;
-    const container = document.getElementById('chatbot-messages');
-    if (!container) return;
-    const div = document.createElement('div');
-    div.className = 'chat-typing';
-    div.id = 'chat-typing-indicator';
-    div.innerHTML = '<span></span><span></span><span></span>';
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    const c = document.getElementById('chatbot-messages');
+    if (!c) return;
+    const d = document.createElement('div');
+    d.className = 'chat-typing'; d.id = 'chat-typing-indicator';
+    d.innerHTML = '<span></span><span></span><span></span>';
+    c.appendChild(d); c.scrollTop = c.scrollHeight;
   },
 
   _hideTyping() {
     this.isTyping = false;
-    const el = document.getElementById('chat-typing-indicator');
-    if (el) el.remove();
+    document.getElementById('chat-typing-indicator')?.remove();
   }
 };

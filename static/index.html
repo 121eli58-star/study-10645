@@ -1,155 +1,308 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl" class="dark">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>מערכת לימודים • קורס 10645</title>
-  <meta name="description" content="מערכת למידה אינטראקטיבית לקורס 10645 — תכנון ועיצוב מערכות מידע">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Lumina Academic</title>
+  <meta name="description" content="מערכת למידה אינטראקטיבית — ריבוי קורסים, כרטיסיות, בחנים ועוזר AI">
 
-  <!-- Google Fonts -->
+  <!-- PWA / iOS -->
+  <meta name="application-name" content="Lumina Academic">
+  <meta name="apple-mobile-web-app-title" content="Lumina">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#f0f9ff">
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Google Fonts: Outfit (headlines) + Heebo (body) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Quicksand:wght@400;500;600;700&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Material Symbols -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
-  <!-- Background Glows -->
-  <div class="bg-glow bg-glow-1"></div>
-  <div class="bg-glow bg-glow-2"></div>
-
-  <!-- Hamburger Toggle (mobile) -->
-  <button class="hamburger-btn" id="hamburger-btn" onclick="App.toggleSidebar()">
-    <span class="material-symbols-outlined">menu</span>
-  </button>
-
-  <!-- Sidebar Overlay (mobile) -->
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="App.closeSidebar()"></div>
-
-  <!-- Sidebar Navigation -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
-      <h1>מערכת לימודים</h1>
-      <p>קורס 10645 • מערכות מידע</p>
-    </div>
-
-    <nav class="sidebar-nav">
-      <button class="sidebar-link active" data-route="dashboard" onclick="App.navigate('dashboard')">
-        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
-        לוח בקרה
-      </button>
-      <button class="sidebar-link" data-route="learn" onclick="App.navigate('learn')">
-        <span class="material-symbols-outlined">auto_stories</span>
-        למידה
-      </button>
-      <button class="sidebar-link" data-route="cards" onclick="App.navigate('cards')">
-        <span class="material-symbols-outlined">style</span>
-        כרטיסיות
-      </button>
-      <button class="sidebar-link" data-route="quiz" onclick="App.navigate('quiz')">
-        <span class="material-symbols-outlined">quiz</span>
-        בוחן
-      </button>
-      <button class="sidebar-link" data-route="exam" onclick="App.navigate('exam')">
-        <span class="material-symbols-outlined">assignment</span>
-        מבחן
-      </button>
-      <button class="sidebar-link" data-route="sandbox" onclick="App.navigate('sandbox')">
-        <span class="material-symbols-outlined">draw</span>
-        סטודיו ציור
-      </button>
-      <button class="sidebar-link" data-route="calculator" onclick="App.navigate('calculator')">
-        <span class="material-symbols-outlined">calculate</span>
-        מחשבון
-      </button>
-    </nav>
-
-    <div class="sidebar-cta">
-      <button onclick="App.toggleChatbot()">
-        <span class="material-symbols-outlined">auto_awesome</span>
-        מועד אלפא - עוזר AI
-      </button>
-    </div>
-  </aside>
-
-  <!-- Top Header -->
-  <header class="top-header" id="top-header">
-    <div class="header-search">
-      <span class="material-symbols-outlined" style="color: var(--soft-purple);">search</span>
-      <input type="text" placeholder="חיפוש יחידות, נושאים או כלים...">
-    </div>
-
-    <div class="header-actions">
-      <div class="header-notification">
-        <span class="material-symbols-outlined">notifications</span>
-        <span class="notif-dot"></span>
-      </div>
-      <div class="header-profile">
-        <div class="header-profile-info">
-          <div class="name">סטודנט • קורס 10645</div>
-          <div class="sub">מערכות מידע</div>
+  <!-- ====== LOGIN SCREEN ====== -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-bg-elements">
+      <div class="login-float login-float-1 glass-panel">
+        <div class="float-header">
+          <span class="material-symbols-outlined">analytics</span>
+          <span class="float-label">ניתוח הישגים</span>
         </div>
-        <div class="header-avatar">🎓</div>
+        <div class="float-bars">
+          <div class="bar" style="height:40%"></div>
+          <div class="bar" style="height:70%"></div>
+          <div class="bar" style="height:50%"></div>
+          <div class="bar" style="height:90%"></div>
+          <div class="bar" style="height:60%"></div>
+        </div>
+      </div>
+      <div class="login-float login-float-2 glass-panel">
+        <span class="material-symbols-outlined" style="font-size:48px;color:rgba(45,27,105,0.5);">auto_fix_high</span>
+        <span class="float-label">בינה מלאכותית יוצרת</span>
+      </div>
+      <div class="login-float login-float-3 glass-panel">
+        <div class="float-header">
+          <span class="material-symbols-outlined">grid_view</span>
+          <span class="float-label">ניהול למידה חכם</span>
+        </div>
+        <div class="float-grid">
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+        </div>
+      </div>
+      <div class="login-float login-float-4 glass-panel">
+        <span class="material-symbols-outlined" style="font-size:24px;color:rgba(45,27,105,0.5);">architecture</span>
+        <span class="float-label">מרחב למידה דינמי</span>
+      </div>
+      <div class="login-glow"></div>
+    </div>
+
+    <div class="login-card glass-card-main">
+      <div class="login-header">
+        <div class="login-icon-wrap">
+          <img src="/icons/lumina-icon.svg" alt="Lumina" style="width:56px;height:56px;border-radius:16px;display:block;">
+        </div>
+        <h1 class="login-title">Lumina Academic</h1>
+        <p class="login-subtitle">השער שלך לקמפוס הדיגיטלי</p>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="login-form" onsubmit="return false;">
+        <div class="form-group">
+          <label>דואר אלקטרוני</label>
+          <div class="input-wrap">
+            <span class="material-symbols-outlined input-icon">alternate_email</span>
+            <input type="email" id="login-email" placeholder="name@student.uni.ac.il">
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="label-row">
+            <label>סיסמה</label>
+            <a href="#" class="forgot-link" onclick="Auth.resetPassword()">שכחת סיסמה?</a>
+          </div>
+          <div class="input-wrap">
+            <span class="material-symbols-outlined input-icon">lock_open</span>
+            <input type="password" id="login-password" placeholder="••••••••">
+          </div>
+        </div>
+        <div id="login-error" class="login-error" style="display:none;"></div>
+        <button type="submit" class="login-btn-primary" onclick="Auth.loginEmail()">
+          <span>כניסה לחשבון</span>
+          <span class="material-symbols-outlined" style="font-size:20px;">arrow_back</span>
+        </button>
+      </form>
+
+      <div class="login-divider">
+        <div class="divider-line"></div>
+        <span>או</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <button class="login-btn-google" onclick="Auth.loginGoogle()">
+        <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        <span>התחברות באמצעות Google</span>
+      </button>
+
+      <!-- Register toggle -->
+      <div id="register-section" style="display:none;">
+        <div class="form-group" style="margin-top:16px;">
+          <label>שם מלא</label>
+          <div class="input-wrap">
+            <span class="material-symbols-outlined input-icon">person</span>
+            <input type="text" id="register-name" placeholder="השם שלך">
+          </div>
+        </div>
+      </div>
+
+      <div class="login-footer">
+        <p>
+          <span id="toggle-register-text">סטודנט חדש?</span>
+          <a href="#" id="toggle-register-link" onclick="Auth.toggleRegister()">הירשם עכשיו</a>
+        </p>
       </div>
     </div>
-  </header>
 
-  <!-- Main Content Area -->
-  <main id="app-content">
-    <div id="loading" class="loading-screen">
-      <div class="spinner"></div>
-      <p style="color: var(--text-secondary);">טוען את המערכת...</p>
+    <div class="login-bottom-bar">
+      <div class="glass-panel version-badge">
+        <div class="status-dot"></div>
+        <span>מערכת מחוברת: v5.0.0</span>
+      </div>
     </div>
-  </main>
-
-  <!-- Chatbot - מועד אלפא -->
-  <div class="chatbot-trigger" id="chatbot-trigger" onclick="App.toggleChatbot()">
-    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
   </div>
 
-  <div class="chatbot-panel" id="chatbot-panel">
-    <div class="chatbot-header">
-      <div class="chatbot-header-title">
-        <span style="font-size:24px;">🤖</span>
+  <!-- ====== MAIN APP (hidden until logged in) ====== -->
+  <div id="app-shell" style="display:none;">
+
+    <!-- Background Mesh -->
+    <div class="app-bg-mesh"></div>
+
+    <!-- Hamburger Toggle (mobile) -->
+    <button class="hamburger-btn" id="hamburger-btn" onclick="App.toggleSidebar()">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="App.closeSidebar()"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <img src="/icons/lumina-icon.svg" alt="Lumina" class="sidebar-logo-img">
         <div>
-          <h3>מועד אלפא</h3>
-          <span class="bot-status">● מוכן לעזור</span>
+          <h1>Lumina Academic</h1>
+          <p id="sidebar-course-name">טוען...</p>
         </div>
       </div>
-      <span class="chatbot-close material-symbols-outlined" onclick="App.toggleChatbot()">close</span>
+
+      <!-- Course Switcher -->
+      <div class="course-switcher-wrap">
+        <div class="course-switcher-label">
+          <span class="material-symbols-outlined" style="font-size:16px;">school</span>
+          הקורסים שלי
+        </div>
+        <div id="course-switcher" class="course-switcher"></div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="sidebar-link active" data-route="dashboard" onclick="App.navigate('dashboard')">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+          לוח בקרה
+        </button>
+        <button class="sidebar-link" data-route="learn" onclick="App.navigate('learn')">
+          <span class="material-symbols-outlined">auto_stories</span>
+          למידה
+        </button>
+        <button class="sidebar-link" data-route="cards" onclick="App.navigate('cards')">
+          <span class="material-symbols-outlined">style</span>
+          כרטיסיות
+        </button>
+        <button class="sidebar-link" data-route="quiz" onclick="App.navigate('quiz')">
+          <span class="material-symbols-outlined">quiz</span>
+          בוחן
+        </button>
+        <button class="sidebar-link" data-route="exam" onclick="App.navigate('exam')">
+          <span class="material-symbols-outlined">assignment</span>
+          מבחן
+        </button>
+        <button class="sidebar-link" data-route="sandbox" data-feature="sandbox" onclick="App.navigate('sandbox')">
+          <span class="material-symbols-outlined">draw</span>
+          סטודיו ציור
+        </button>
+        <button class="sidebar-link" data-route="calculator" data-feature="calculator" onclick="App.navigate('calculator')">
+          <span class="material-symbols-outlined">calculate</span>
+          מחשבון
+        </button>
+      </nav>
+
+      <div class="sidebar-cta">
+        <button onclick="App.toggleChatbot()">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          מועד אלפא - עוזר AI
+        </button>
+      </div>
+
+      <div class="sidebar-logout">
+        <button onclick="Auth.logout()">
+          <span class="material-symbols-outlined">logout</span>
+          התנתקות
+        </button>
+      </div>
+    </aside>
+
+    <!-- Top Header -->
+    <header class="top-header" id="top-header">
+      <div class="header-search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="חיפוש יחידות, נושאים או כלים...">
+      </div>
+
+      <div class="header-actions">
+        <div class="header-notification">
+          <span class="material-symbols-outlined">notifications</span>
+          <span class="notif-dot"></span>
+        </div>
+        <div class="header-profile">
+          <div class="header-profile-info">
+            <div class="name" id="header-user-name">סטודנט</div>
+            <div class="sub" id="header-course-label">טוען...</div>
+          </div>
+          <div class="header-avatar" id="header-avatar">🎓</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="app-content">
+      <div id="loading" class="loading-screen">
+        <div class="spinner"></div>
+        <p>טוען את המערכת...</p>
+      </div>
+    </main>
+
+    <!-- Chatbot - מועד אלפא -->
+    <div class="chatbot-trigger" id="chatbot-trigger" onclick="App.toggleChatbot()">
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
     </div>
-    <div class="chatbot-messages" id="chatbot-messages">
-      <div class="chat-msg bot">
-        <div class="bot-name">מועד אלפא</div>
-        היי! 👋 אני מועד אלפא, העוזר האישי שלך לקורס מערכות מידע. אפשר לשאול אותי על כל נושא בקורס — נרמול, DFD, ERD, מחזור חיים ועוד. מה תרצה ללמוד?
+
+    <div class="chatbot-panel" id="chatbot-panel">
+      <div class="chatbot-header">
+        <div class="chatbot-header-title">
+          <span style="font-size:24px;">🤖</span>
+          <div>
+            <h3>מועד אלפא</h3>
+            <span class="bot-status">● מוכן לעזור</span>
+          </div>
+        </div>
+        <span class="chatbot-close material-symbols-outlined" onclick="App.toggleChatbot()">close</span>
+      </div>
+      <div class="chatbot-messages" id="chatbot-messages">
+        <div class="chat-msg bot" id="chatbot-greeting">
+          <div class="bot-name">מועד אלפא</div>
+          היי! 👋 אני מועד אלפא, העוזר האישי שלך. בחר קורס ושאל אותי על כל נושא. מה תרצה ללמוד?
+        </div>
+      </div>
+      <div class="chatbot-input">
+        <input type="text" id="chatbot-input-field" placeholder="שאל את מועד אלפא..." onkeydown="if(event.key==='Enter')Chatbot.send()">
+        <button onclick="Chatbot.send()">
+          <span class="material-symbols-outlined">send</span>
+        </button>
       </div>
     </div>
-    <div class="chatbot-input">
-      <input type="text" id="chatbot-input-field" placeholder="שאל את מועד אלפא..." onkeydown="if(event.key==='Enter')Chatbot.send()">
-      <button onclick="Chatbot.send()">
-        <span class="material-symbols-outlined">send</span>
-      </button>
-    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
   </div>
 
-  <!-- Toast Notifications -->
-  <div id="toast-container"></div>
+  <!-- Firebase SDK (compat mode for simplicity) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-  <!-- Scripts -->
-  <script src="/static/js/utils/hebrew-labels.js"></script>
-  <script src="/static/js/api.js"></script>
-  <script src="/static/js/components/dashboard.js"></script>
-  <script src="/static/js/components/unit-viewer.js"></script>
-  <script src="/static/js/components/flashcard-viewer.js"></script>
-  <script src="/static/js/components/quiz-viewer.js"></script>
-  <script src="/static/js/components/exam-viewer.js"></script>
-  <script src="/static/js/components/calculator.js"></script>
-  <script src="/static/js/components/diagram-editor.js"></script>
-  <script src="/static/js/components/chatbot.js"></script>
-  <script src="/static/js/app.js"></script>
+  <!-- App Scripts -->
+  <script src="/js/utils/hebrew-labels.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/components/login.js"></script>
+  <script src="/js/components/dashboard.js"></script>
+  <script src="/js/components/unit-viewer.js"></script>
+  <script src="/js/components/flashcard-viewer.js"></script>
+  <script src="/js/components/quiz-viewer.js"></script>
+  <script src="/js/components/exam-viewer.js"></script>
+  <script src="/js/components/calculator.js"></script>
+  <script src="/js/components/diagram-editor.js"></script>
+  <script src="/js/components/chatbot.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 </html>

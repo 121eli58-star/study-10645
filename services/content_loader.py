@@ -1,8 +1,7 @@
-"""Service to load and cache JSON content files."""
+"""Service to load and cache JSON content files (multi-course)."""
 import json
 from pathlib import Path
-from functools import lru_cache
-from config import UNITS_DIR, EXERCISES_DIR, EXAM_BANK_DIR, USER_DATA_DIR
+from config import COURSES_DIR, UNITS_DIR, EXERCISES_DIR, EXAM_BANK_DIR, USER_DATA_DIR
 
 
 def _load_json(path: Path) -> dict:
@@ -11,18 +10,42 @@ def _load_json(path: Path) -> dict:
         return json.load(f)
 
 
-def load_all_units() -> list[dict]:
-    """Load all unit JSON files sorted by ID."""
+def load_courses() -> list[dict]:
+    """Load the courses index."""
+    index_path = COURSES_DIR / "courses_index.json"
+    if index_path.exists():
+        return _load_json(index_path)
+    return []
+
+
+def load_course(course_id: str) -> dict | None:
+    """Load a course manifest by ID."""
+    path = COURSES_DIR / course_id / "course.json"
+    if path.exists():
+        return _load_json(path)
+    return None
+
+
+def load_all_units(course_id: str = None) -> list[dict]:
+    """Load all unit JSON files for a course, sorted by ID."""
+    if course_id:
+        units_dir = COURSES_DIR / course_id / "units"
+    else:
+        units_dir = UNITS_DIR  # legacy fallback
     units = []
-    for json_file in sorted(UNITS_DIR.glob("unit_*.json")):
+    for json_file in sorted(units_dir.glob("unit_*.json")):
         data = _load_json(json_file)
         units.append(data)
     return sorted(units, key=lambda u: u["id"])
 
 
-def load_unit(unit_id: int) -> dict | None:
-    """Load a single unit by ID."""
-    for json_file in UNITS_DIR.glob("unit_*.json"):
+def load_unit(unit_id: int, course_id: str = None) -> dict | None:
+    """Load a single unit by ID, optionally scoped to a course."""
+    if course_id:
+        units_dir = COURSES_DIR / course_id / "units"
+    else:
+        units_dir = UNITS_DIR
+    for json_file in units_dir.glob("unit_*.json"):
         data = _load_json(json_file)
         if data.get("id") == unit_id:
             return data

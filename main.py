@@ -16,12 +16,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from config import STATIC_DIR, HOST, PORT
+from config import STATIC_DIR, DATA_DIR, HOST, PORT
 from routers import units, quiz, exams, progress, diagrams
 
 app = FastAPI(
-    title="מערכת לימודים - קורס 10645",
-    description="Interactive Learning System for Information Systems Design",
+    title="Lumina Academic — מערכת לימודים",
+    description="Multi-course Interactive Learning System",
     version="1.0.0"
 )
 
@@ -53,7 +53,14 @@ app.include_router(exams.router, prefix="/api")
 app.include_router(progress.router, prefix="/api")
 app.include_router(diagrams.router, prefix="/api")
 
-# Serve static files
+# Serve static files - mount sub-directories at root level
+# so paths like /css/style.css work identically in both
+# local dev (FastAPI) and Firebase Hosting
+app.mount("/css", StaticFiles(directory=str(STATIC_DIR / "css")), name="css")
+app.mount("/js", StaticFiles(directory=str(STATIC_DIR / "js")), name="js")
+app.mount("/icons", StaticFiles(directory=str(STATIC_DIR / "icons")), name="icons")
+app.mount("/data", StaticFiles(directory=str(DATA_DIR)), name="data")
+# Keep /static mount for backward compatibility
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
@@ -66,14 +73,14 @@ async def root():
 @app.get("/health")
 async def health():
     """Health check endpoint."""
-    return {"status": "ok", "app": "course-10645-learning-system"}
+    return {"status": "ok", "app": "lumina-academic"}
 
 
 if __name__ == "__main__":
     import uvicorn
     print("\n" + "=" * 50)
-    print("  מערכת לימודים - קורס 10645")
-    print("  תכנון, ניתוח ועיצוב מערכות מידע")
+    print("  Lumina Academic — מערכת לימודים")
+    print("  מערכת למידה מרובת קורסים")
     print("=" * 50)
     print(f"\n  Server: http://{HOST}:{PORT}")
     print(f"  API Docs: http://{HOST}:{PORT}/docs")
