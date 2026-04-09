@@ -1,0 +1,31 @@
+{
+  "id": "10645",
+  "title": "תכנון ועיצוב מערכות מידע",
+  "icon": "💾",
+  "color": "#3b82f6",
+  "description": "קורס בתכנון ועיצוב מערכות מידע — מבוא, תרשימים, ERD, נרמול, DFD, UML ועוד",
+  "features": ["calculator", "sandbox"],
+  "chatbot_topics": [
+    "מבוא למערכות מידע ומחזור החיים של פיתוח מערכות (SDLC)",
+    "ניתוח דרישות ואפיון מערכת",
+    "תרשימי זרימה (Flowcharts)",
+    "חקר ישימות וניתוח עלות-תועלת",
+    "מילון נתונים (Data Dictionary)",
+    "מודלים ישויות-קשרים (ERD)",
+    "נרמול (Normalization) — 1NF, 2NF, 3NF, BCNF",
+    "תרשימי זרימת נתונים (DFD)",
+    "תרשימי מחלקות UML",
+    "עיצוב ממשק משתמש ותפריטים"
+  ],
+  "units": [
+    {"id": 1, "file": "unit_01_intro"},
+    {"id": 2, "file": "unit_02_flowcharts"},
+    {"id": 3, "file": "unit_03_feasibility"},
+    {"id": 4, "file": "unit_04_data_dictionary"},
+    {"id": 5, "file": "unit_05_erd"},
+    {"id": 6, "file": "unit_06_transactions_menu"},
+    {"id": 7, "file": "unit_07_normalization"},
+    {"id": 8, "file": "unit_08_uml_class"},
+    {"id": 9, "file": "unit_09_dfd"}
+  ]
+}
