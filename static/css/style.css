@@ -270,8 +270,13 @@ a{text-decoration:none;color:inherit;}
 .sidebar-logout button{width:100%;padding:10px;color:var(--text-secondary);font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius-sm);transition:background 0.2s,color 0.2s;}
 .sidebar-logout button:hover{color:var(--error);background:rgba(239,68,68,0.06);}
 
-/* === Hamburger === */
-.hamburger-btn{display:none;position:fixed;top:18px;right:18px;z-index:200;width:44px;height:44px;background:rgba(255,255,255,0.8);backdrop-filter:blur(12px);border-radius:var(--radius-sm);border:1px solid var(--border-card);align-items:center;justify-content:center;color:var(--brand-deep);}
+/* === Hamburger (inside header) === */
+.hamburger-btn{display:none;width:40px;height:40px;align-items:center;justify-content:center;color:var(--brand-deep);flex-shrink:0;border-radius:var(--radius-sm);}
+.hamburger-btn:hover{background:rgba(45,27,105,0.06);}
+/* === Sidebar close button (mobile only, inside sidebar-logo) === */
+.sidebar-close-btn{display:none;width:36px;height:36px;align-items:center;justify-content:center;color:var(--text-secondary);border-radius:var(--radius-sm);margin-inline-start:auto;flex-shrink:0;}
+.sidebar-close-btn:hover{background:rgba(45,27,105,0.06);color:var(--brand-deep);}
+.sidebar-close-btn .material-symbols-outlined{font-size:20px;}
 .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:90;opacity:0;pointer-events:none;transition:opacity 0.28s ease;}
 .sidebar-overlay.active{opacity:1;pointer-events:auto;}
 
@@ -609,6 +614,7 @@ select:focus{outline:none;border-color:var(--brand-blue);}
   /* Sidebar: off-screen before JS initializes. JS (app.js _setSidebarTransform) drives the actual open/close. */
   .sidebar{transform:translateX(120%);}
   .hamburger-btn{display:flex;}
+  .sidebar-close-btn{display:flex;}
   .top-header{right:0;padding:0 16px;}
   .top-header .header-search{display:none;}
   #app-content{margin-right:0;padding:24px 16px;}
@@ -671,10 +677,6 @@ body {
   margin-top: calc(var(--header-height) + env(safe-area-inset-top));
 }
 
-/* Hamburger button: below notch on mobile */
-.hamburger-btn {
-  top: max(18px, calc(env(safe-area-inset-top) + 8px));
-}
 
 /* Chatbot trigger: above home bar on iPhone */
 .chatbot-trigger {

@@ -148,11 +148,6 @@
     <!-- Background Mesh -->
     <div class="app-bg-mesh"></div>
 
-    <!-- Hamburger Toggle (mobile) -->
-    <button class="hamburger-btn" id="hamburger-btn" onclick="App.toggleSidebar()">
-      <span class="material-symbols-outlined">menu</span>
-    </button>
-
     <!-- Sidebar Overlay (mobile) -->
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="App.closeSidebar()"></div>
 
@@ -164,6 +159,9 @@
           <h1>Lumina Academic</h1>
           <p id="sidebar-course-name">טוען...</p>
         </div>
+        <button class="sidebar-close-btn" onclick="App.closeSidebar()" aria-label="סגור תפריט">
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
 
       <!-- Course Switcher -->
@@ -223,6 +221,10 @@
 
     <!-- Top Header -->
     <header class="top-header" id="top-header">
+      <!-- Hamburger (mobile only — inside header, no floating overlap) -->
+      <button class="hamburger-btn" id="hamburger-btn" onclick="App.toggleSidebar()">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
       <div class="header-search">
         <span class="material-symbols-outlined">search</span>
         <input type="text" placeholder="חיפוש יחידות, נושאים או כלים...">
