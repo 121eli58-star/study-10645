@@ -2,16 +2,53 @@
  * Unit Viewer Component — Learning Hub + Reader
  */
 window.UnitViewer = {
+  /** Reader skeleton (shown while a unit loads) */
+  _renderReaderSkeleton(container) {
+    container.innerHTML = `<div class="page-narrow fade-in">
+      <div class="skeleton skeleton-text med" style="margin:0 auto 20px;height:22px;"></div>
+      <div class="card card-static">
+        <div class="skeleton skeleton-text" style="width:90%;"></div>
+        <div class="skeleton skeleton-text" style="width:80%;"></div>
+        <div class="skeleton skeleton-text" style="width:95%;"></div>
+        <div class="skeleton skeleton-text" style="width:70%;"></div>
+        <div class="skeleton skeleton-text" style="width:85%;"></div>
+        <div class="skeleton skeleton-text" style="width:60%;"></div>
+        <div class="skeleton skeleton-text" style="width:92%;"></div>
+        <div class="skeleton skeleton-text" style="width:75%;"></div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:12px;margin-top:20px;">
+        <div class="skeleton" style="width:140px;height:42px;border-radius:var(--radius-pill);"></div>
+        <div class="skeleton" style="width:140px;height:42px;border-radius:var(--radius-pill);"></div>
+      </div>
+    </div>`;
+  },
+
+  /** Hub skeleton (shown while units list loads) */
+  _renderHubSkeleton(container) {
+    container.innerHTML = `<div class="page fade-in">
+      <div class="skeleton" style="height:150px;border-radius:var(--radius-xl);margin-bottom:24px;"></div>
+      <div class="hub-stats" style="margin-bottom:24px;">
+        <div class="skeleton" style="height:86px;border-radius:var(--radius-lg);"></div>
+        <div class="skeleton" style="height:86px;border-radius:var(--radius-lg);"></div>
+        <div class="skeleton" style="height:86px;border-radius:var(--radius-lg);"></div>
+      </div>
+      <div class="unit-grid">
+        ${Array.from({length:6}).map(()=>'<div class="skeleton skeleton-card"></div>').join('')}
+      </div>
+    </div>`;
+  },
+
   async render(container, unitId) {
     if (!unitId) {
       this._renderHub(container);
       return;
     }
 
-    container.innerHTML = '<div class="loading-screen"><div class="spinner"></div></div>';
+    this._renderReaderSkeleton(container);
 
     try {
-      const [unit, progress] = await Promise.all([API.getUnit(unitId), API.getProgress()]);
+      const progress = API.getProgressSync();
+      const unit = await API.getUnit(unitId);
       const isRead = (progress.units_read || []).includes(unitId);
       const summary = unit.summary || [];
       const summaryItems = Array.isArray(summary) ? summary :
@@ -53,9 +90,10 @@ window.UnitViewer = {
 
   /** Hub page when no unit is selected */
   async _renderHub(container) {
-    container.innerHTML = '<div class="loading-screen"><div class="spinner"></div></div>';
+    this._renderHubSkeleton(container);
     try {
-      const [unitsData, progress] = await Promise.all([API.getUnits(), API.getProgress()]);
+      const progress = API.getProgressSync();
+      const unitsData = await API.getUnits();
       const units = unitsData.units || [];
       const readCount = (progress.units_read || []).length;
 

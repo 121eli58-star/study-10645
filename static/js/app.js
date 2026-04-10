@@ -29,21 +29,32 @@ window.App = {
 
   /** Switch active course */
   async switchCourse(courseId, isInit = false) {
+    if (!isInit && this.currentCourseId === courseId) return;
+
+    // Optimistic UI: mark the new course active immediately in the switcher
+    document.querySelectorAll('.course-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.courseId === courseId);
+    });
+
+    // Subtle overlay for anything slower than ~150ms
+    const targetCourse = this.courses.find(c => c.id === courseId);
+    const overlay = isInit ? null : this._showSwitchOverlay(targetCourse);
+
     this.currentCourseId = courseId;
     try {
       await API.setCourse(courseId);
     } catch (e) {
       console.error('Failed to load course', courseId, e);
+      this._hideSwitchOverlay(overlay);
+      this.toast('שגיאה בטעינת הקורס', 'error', {
+        label: 'נסה שוב',
+        onClick: () => this.switchCourse(courseId)
+      });
       return;
     }
 
     this._renderCourseSwitcher();
     this._updateSidebarFeatures();
-
-    if (!isInit || this.currentRoute === 'dashboard') {
-      this.currentUnitId = null;
-      this.navigate('dashboard');
-    }
 
     // Reset chatbot for new course
     if (typeof Chatbot !== 'undefined') {
@@ -51,6 +62,35 @@ window.App = {
       Chatbot.messages = [];
       Chatbot._updateSystemPrompt();
     }
+
+    this._hideSwitchOverlay(overlay);
+
+    if (!isInit || this.currentRoute === 'dashboard') {
+      this.currentUnitId = null;
+      this.navigate('dashboard');
+    }
+  },
+
+  _showSwitchOverlay(course) {
+    let el = document.getElementById('course-switching-overlay');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'course-switching-overlay';
+      document.body.appendChild(el);
+    }
+    el.innerHTML = `<div class="switch-card">
+      <div class="spinner-sm"></div>
+      <span>עובר ל${course ? '-' + course.title : 'קורס'}...</span>
+    </div>`;
+    // Force reflow then add .active to trigger fade-in
+    requestAnimationFrame(() => el.classList.add('active'));
+    return el;
+  },
+
+  _hideSwitchOverlay(el) {
+    if (!el) return;
+    el.classList.remove('active');
+    setTimeout(() => { if (el && el.parentNode) el.remove(); }, 300);
   },
 
   /** Render course switcher in sidebar */
@@ -61,10 +101,10 @@ window.App = {
     let html = '';
     for (const c of this.courses) {
       const isActive = c.id === this.currentCourseId;
-      html += `<button class="course-btn ${isActive ? 'active' : ''}" onclick="App.switchCourse('${c.id}')" title="${c.title}">
+      html += `<button class="course-btn ${isActive ? 'active' : ''}" data-course-id="${c.id}" onclick="App.switchCourse('${c.id}')" title="${c.title}">
         <span class="course-btn-icon">${c.icon}</span>
         <span class="course-btn-text">${c.id} — ${c.title}</span>
-        ${isActive ? '<span class="material-symbols-outlined course-btn-check">check_circle</span>' : ''}
+        <span class="material-symbols-outlined course-btn-check" style="${isActive ? '' : 'display:none'}">check_circle</span>
       </button>`;
     }
     el.innerHTML = html;
@@ -86,8 +126,8 @@ window.App = {
     });
   },
 
-  /** Navigate to a route */
-  navigate(route, unitId) {
+  /** Navigate to a route (async, with fade transition) */
+  async navigate(route, unitId) {
     this.currentRoute = route;
     if (unitId !== undefined) this.currentUnitId = unitId;
 
@@ -102,6 +142,16 @@ window.App = {
 
     this.closeSidebar();
     const container = document.getElementById('app-content');
+
+    // Only animate if user doesn't prefer reduced motion
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (container && !reduceMotion) {
+      container.classList.add('page-leaving');
+      await new Promise(r => setTimeout(r, 170));
+      container.classList.remove('page-leaving');
+      container.classList.add('page-entering');
+      setTimeout(() => container.classList.remove('page-entering'), 320);
+    }
 
     switch (route) {
       case 'dashboard':
@@ -135,19 +185,74 @@ window.App = {
     }
   },
 
+  /** Animate a numeric counter from 0 to `to` over `duration` ms */
+  animateCount(el, to, duration = 900) {
+    if (!el) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion || !to || to <= 0) { el.textContent = String(Math.round(to || 0)); return; }
+    const start = performance.now();
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      el.textContent = String(Math.round(to * eased));
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  },
+
   openUnit(unitId, mode) {
     this.currentUnitId = unitId;
     this.navigate(mode, unitId);
   },
 
+  _isMobile() { return window.innerWidth <= 1024; },
+
+  /** Animate sidebar open/close via rAF — bypasses CSS transition quirks on fixed elements */
+  _animateSidebar(open) {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    if (!this._isMobile()) { sidebar.style.transform = ''; return; }
+
+    // Cancel any in-progress animation
+    if (this._sidebarRaf) cancelAnimationFrame(this._sidebarRaf);
+
+    // Parse current translateX% from inline style or default
+    const current = sidebar.style.transform;
+    const match = current.match(/translateX\(([\d.]+)%\)/);
+    // Default to 120 (off-screen) when no inline style — matches the CSS initial state
+    const startPct = match ? parseFloat(match[1]) : 120;
+    const endPct = open ? 0 : 120;
+    const duration = 320;
+    const ease = t => 1 - Math.pow(1 - t, 3); // easeOutCubic
+    const startTime = performance.now();
+
+    const step = (now) => {
+      const t = Math.min(1, (now - startTime) / duration);
+      const pct = startPct + (endPct - startPct) * ease(t);
+      sidebar.style.transform = `translateX(${pct.toFixed(2)}%)`;
+      if (t < 1) { this._sidebarRaf = requestAnimationFrame(step); }
+      else { sidebar.style.transform = `translateX(${endPct}%)`; this._sidebarRaf = null; }
+    };
+    this._sidebarRaf = requestAnimationFrame(step);
+  },
+
   toggleSidebar() {
-    document.getElementById('sidebar')?.classList.toggle('open');
-    document.getElementById('sidebar-overlay')?.classList.toggle('active');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (!sidebar) return;
+    const opening = !sidebar.classList.contains('open');
+    sidebar.classList.toggle('open', opening);
+    overlay?.classList.toggle('active', opening);
+    this._animateSidebar(opening);
   },
 
   closeSidebar() {
-    document.getElementById('sidebar')?.classList.remove('open');
-    document.getElementById('sidebar-overlay')?.classList.remove('active');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (!sidebar) return;
+    sidebar.classList.remove('open');
+    overlay?.classList.remove('active');
+    this._animateSidebar(false);
   },
 
   toggleChatbot() {
@@ -163,16 +268,44 @@ window.App = {
     this.closeSidebar();
   },
 
-  toast(message, type = 'success') {
+  /**
+   * Show a toast notification.
+   * @param {string} message - The message to show
+   * @param {'success'|'error'} type - Visual style
+   * @param {{label: string, onClick: Function}} [action] - Optional action button
+   */
+  toast(message, type = 'success', action = null) {
     const tc = document.getElementById('toast-container');
+    if (!tc) return;
     const t = document.createElement('div');
     t.className = `toast ${type}`;
-    t.textContent = message;
+    const text = document.createElement('span');
+    text.textContent = message;
+    t.appendChild(text);
+    if (action && action.label && typeof action.onClick === 'function') {
+      const btn = document.createElement('button');
+      btn.className = 'toast-action';
+      btn.textContent = action.label;
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        try { action.onClick(); } catch (err) { console.warn(err); }
+        this._dismissToast(t);
+      };
+      t.appendChild(btn);
+    }
     tc.appendChild(t);
-    setTimeout(() => {
-      t.style.opacity = '0';
-      t.style.transition = 'opacity 0.3s';
-      setTimeout(() => t.remove(), 300);
-    }, 3000);
+
+    const duration = type === 'error' ? 7000 : 5000;
+    let timer = setTimeout(() => this._dismissToast(t), duration);
+
+    // Pause dismiss on hover
+    t.addEventListener('mouseenter', () => { clearTimeout(timer); });
+    t.addEventListener('mouseleave', () => { timer = setTimeout(() => this._dismissToast(t), 2000); });
+  },
+
+  _dismissToast(t) {
+    if (!t || !t.parentNode) return;
+    t.classList.add('leaving');
+    setTimeout(() => { if (t.parentNode) t.remove(); }, 300);
   }
 };

@@ -54,15 +54,19 @@ window.API = {
   async getUnits() {
     const manifest = this._courseManifest;
     if (!manifest) throw new Error('No course selected');
-    const units = [];
-    for (const entry of manifest.units) {
-      const u = await this._loadUnit(entry.id);
-      units.push({
-        id: u.id, title: u.title, icon: u.icon || '', color: u.color || manifest.color || '#3b82f6',
-        topic_count: (u.topics || []).length, flashcard_count: (u.flashcards || []).length,
-        quiz_count: (u.quiz || []).length, summary_count: Array.isArray(u.summary) ? u.summary.length : 0
-      });
-    }
+    const units = await Promise.all(
+      manifest.units.map(async entry => {
+        const u = await this._loadUnit(entry.id);
+        return {
+          id: u.id, title: u.title, icon: u.icon || '',
+          color: u.color || manifest.color || '#3b82f6',
+          topic_count: (u.topics || []).length,
+          flashcard_count: (u.flashcards || []).length,
+          quiz_count: (u.quiz || []).length,
+          summary_count: Array.isArray(u.summary) ? u.summary.length : 0
+        };
+      })
+    );
     return { units };
   },
 
@@ -115,23 +119,63 @@ window.API = {
 
   _progressKey() { return `study_${this._currentCourseId}_progress`; },
 
-  _defaultProgress() { return { units_read: [], flashcards_completed: [], quiz_scores: {}, exam_history: [] }; },
+  _defaultProgress() {
+    return {
+      units_read: [],
+      flashcards_completed: [],
+      quiz_scores: {},
+      exam_history: [],
+      flashcard_mastery: {},  // { "unitId_cardIndex": { box, nextReview, lastSeen } }
+      quiz_mistakes: {}       // { "unitId_qIndex": count }
+    };
+  },
+
+  // Leitner box review intervals in days (index = box number 1-5)
+  _leitnerDays: [0, 1, 2, 4, 8, 16],
 
   _getUid() {
     return Auth?.currentUser?.uid || null;
   },
 
+  /** Fast synchronous read from localStorage — use for initial render */
+  getProgressSync() {
+    try { return JSON.parse(localStorage.getItem(this._progressKey())) || this._defaultProgress(); }
+    catch { return this._defaultProgress(); }
+  },
+
+  /** Legacy async path: checks Firestore first, falls back to localStorage */
   async getProgress() {
     const uid = this._getUid();
     const courseId = this._currentCourseId;
     if (uid && Auth?.db) {
       try {
         const doc = await Auth.db.collection('users').doc(uid).collection('courses').doc(courseId).get();
-        if (doc.exists) return doc.data();
+        if (doc.exists) {
+          const p = doc.data();
+          // keep localStorage in sync for future sync reads
+          try { localStorage.setItem(this._progressKey(), JSON.stringify(p)); } catch {}
+          return p;
+        }
       } catch (e) { console.warn('Firestore read failed, using localStorage', e); }
     }
-    try { return JSON.parse(localStorage.getItem(this._progressKey())) || this._defaultProgress(); }
-    catch { return this._defaultProgress(); }
+    return this.getProgressSync();
+  },
+
+  /** Background Firestore sync — dispatches 'progress-synced' event when done */
+  async syncProgressFromCloud() {
+    const uid = this._getUid();
+    if (!uid || !Auth?.db) return null;
+    const courseId = this._currentCourseId;
+    try {
+      const doc = await Auth.db.collection('users').doc(uid).collection('courses').doc(courseId).get();
+      if (doc.exists) {
+        const p = doc.data();
+        try { localStorage.setItem(this._progressKey(), JSON.stringify(p)); } catch {}
+        window.dispatchEvent(new CustomEvent('progress-synced', { detail: p }));
+        return p;
+      }
+    } catch (e) { console.warn('Progress sync failed', e); }
+    return null;
   },
 
   async _saveProgress(p) {
@@ -159,6 +203,77 @@ window.API = {
     }
     await this._saveProgress(progress);
     return { status: 'ok', progress };
+  },
+
+  // ── Spaced Repetition (Leitner boxes) ──
+
+  /** Update mastery after reviewing a flashcard. `knew` = true → advance box; false → reset to box 1 */
+  async updateFlashcardMastery(cardKey, knew) {
+    const progress = await this.getProgress();
+    if (!progress.flashcard_mastery) progress.flashcard_mastery = {};
+    const cur = progress.flashcard_mastery[cardKey] || { box: 1, nextReview: 0, lastSeen: 0 };
+    const now = Date.now();
+    const newBox = knew ? Math.min(5, cur.box + 1) : 1;
+    const days = this._leitnerDays[newBox] || 1;
+    progress.flashcard_mastery[cardKey] = {
+      box: newBox,
+      nextReview: now + days * 86400000, // ms per day
+      lastSeen: now
+    };
+    await this._saveProgress(progress);
+    return progress.flashcard_mastery[cardKey];
+  },
+
+  /** Returns indices of cards due for review now in a unit (unseen cards are always "due") */
+  getUnitCardsDue(unitId, totalCards) {
+    const progress = this.getProgressSync();
+    const mastery = progress.flashcard_mastery || {};
+    const now = Date.now();
+    const due = [];
+    for (let i = 0; i < totalCards; i++) {
+      const key = `${unitId}_${i}`;
+      const m = mastery[key];
+      if (!m || m.nextReview <= now) due.push(i); // unseen OR overdue
+    }
+    return due;
+  },
+
+  /** Total cards due across all units (for dashboard badge) */
+  getFlashcardsDueCount() {
+    const progress = this.getProgressSync();
+    const mastery = progress.flashcard_mastery || {};
+    const now = Date.now();
+    return Object.values(mastery).filter(m => m.nextReview <= now).length;
+  },
+
+  /** Get mastery object for a card */
+  getCardMastery(cardKey) {
+    const progress = this.getProgressSync();
+    return (progress.flashcard_mastery || {})[cardKey] || null;
+  },
+
+  // ── Quiz Mistakes ──
+
+  /** Record which question indices were wrong after a quiz submission */
+  async recordQuizMistakes(unitId, wrongIndices) {
+    if (!wrongIndices || wrongIndices.length === 0) return;
+    const progress = await this.getProgress();
+    if (!progress.quiz_mistakes) progress.quiz_mistakes = {};
+    for (const idx of wrongIndices) {
+      const key = `${unitId}_${idx}`;
+      progress.quiz_mistakes[key] = (progress.quiz_mistakes[key] || 0) + 1;
+    }
+    await this._saveProgress(progress);
+  },
+
+  /** Get mistake indices for a unit (sorted by mistake count desc) */
+  getQuizMistakes(unitId) {
+    const progress = this.getProgressSync();
+    const mistakes = progress.quiz_mistakes || {};
+    return Object.entries(mistakes)
+      .filter(([k]) => k.startsWith(`${unitId}_`))
+      .map(([k, count]) => ({ index: parseInt(k.split('_')[1]), count }))
+      .sort((a, b) => b.count - a.count);
   },
 
   // ── Migration: old flat progress → per-course ──
